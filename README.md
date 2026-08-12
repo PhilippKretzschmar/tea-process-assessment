@@ -1,7 +1,6 @@
-# tea — Techno-Economic Assessment for Process Concepts
+# tea — Techno-Economic Assessment for Process Concepts in the chemical industry
 
-**One methodology, applied identically across many process concepts — so that the
-results are comparable, not merely available.**
+**Modular package for comparative techno-economic assesment studies of process concepts in the chemical industry. Rapidly set up and branch cases in an isolated SSOT input layer. Specify CAPEX, OPEX and profitability estimators, grouped pinch and hen design studies for streams from a specified heat-integration pool, and much more. Use the command tea.update() to trigger the calculation pipeline in a stateless service layer, including selection of the most cost-effective heat integration. Inspect and compare techno-economics in the results layer. Import flowsheet data into the case from external simulators. Use the interpretation layer to orchestrate sensitivity external sweeps. Persist and keep track of cases through serialization in the .json format. and write your frontend to make them inspectable and comparable on websites **
 
 <!-- HERO FIGURE: insert the single most informative figure here, full width.
      Suggested: HEN grid or the HEN economics comparison, since it shows both

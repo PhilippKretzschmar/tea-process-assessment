@@ -3,6 +3,18 @@
 **One methodology, applied identically across many process concepts — so that the
 results are comparable, not merely available.**
 
+> [!IMPORTANT]
+> ## PRELIMINARY SHOWCASE — UPLOAD OF FULL SHOWCASE PENDING
+>
+> This repository currently presents **one worked case**, published to make the
+> core workflow visible: case setup, flowsheet import, a single `update()` call,
+> and the results layer.
+>
+> The full showcase is in preparation and will add further assessed cases, the
+> sensitivity analysis with its results, and the generated assessment report.
+> Until then, the capability table below states what the code does; the worked
+> case below it is the evidence for the part that is already shown.
+
 ![Heat exchanger network synthesised for the CO₂ pressurization case](assets/hen_grid.png)
 
 *A heat exchanger network synthesised by the package for the worked case below.
@@ -56,7 +68,34 @@ could contradict.
 
 ![Case setup: scope, cost context and financial assumptions](assets/example_setup.png)
 
-### 2 · One call runs the pipeline
+### 2 · What the import puts into the case
+
+The flowsheet is read once. From that point the case carries the streams, the
+unit operations and the compound set as its own inventory — the assessment does
+not reach back into the simulator for them. The import states what it did and
+what it defaulted:
+
+![Flowsheet import summary](assets/example_import.png)
+
+Seven equipment items, materials defaulted to SS316, and a warning that the
+compressors carry no power utility yet — wired up in the next cell. A default is
+recorded as a default, not applied silently.
+
+**Stream inventory, thermal section.** Every quantity the pinch analysis and the
+network synthesis use later is visible here: heat capacity, inlet and outlet
+temperature, phase, and whether the stream belongs to the heat-integration pool.
+A result without its inventory is a number without a basis.
+
+![Stream inventory, thermal section](assets/example_streams_thermal.png)
+
+**Equipment inventory.** The sizing inputs per item, and the specification
+choices the import made — orientation, design pressure, material. The sizing
+outputs are still empty at this point; `update()` fills them, and section 4
+costs them.
+
+![Equipment inventory: pressure vessels and compressors](assets/example_equipment.png)
+
+### 3 · One call runs the pipeline
 
 `validate()` checks the case for completeness before anything is computed.
 `update()` then runs equipment sizing, cost estimation, pinch targeting, network
@@ -66,7 +105,7 @@ and one result it declined to compute rather than compute wrongly.
 
 ![validate() and update() with their result reports](assets/example_run.png)
 
-### 3 · Results carry their own derivation
+### 4 · Results carry their own derivation
 
 `breakdown=True` decomposes a number down to the line items and the applied
 factors, so an estimate can be traced back to its basis rather than taken on
@@ -80,7 +119,7 @@ Lang factor of 5.00.
 
 ![Operating cost with variable and fixed breakdown](assets/example_results_opex.png)
 
-### 4 · What heat integration is worth here
+### 5 · What heat integration is worth here
 
 Four syntheses are run against the same pinch scenario by MINLP with augmented
 penalty, varied over the exchanger minimum approach temperature and the
@@ -126,11 +165,11 @@ Status reflects the code, not the specification. `Partial` names the gap.
 
 | Area | What it does | Status |
 |---|---|---|
-| **Capital cost** | Factored estimation with three published factor schemes (Lang refined 2003, Lang detailed 2003, Towler & Sinnott 2022); ISBL/OSBL separation where the scheme supports it; working capital by five methods | Implemented — [worked example](#3--results-carry-their-own-derivation) |
-| **Operating cost** | Direct and indirect operating cost with three published estimator families (Towler & Sinnott 2022; Peters, Timmerhaus & West 2003; Seider, Lewin & Lewis 2017) | Implemented — [worked example](#3--results-carry-their-own-derivation) |
+| **Capital cost** | Factored estimation with three published factor schemes (Lang refined 2003, Lang detailed 2003, Towler & Sinnott 2022); ISBL/OSBL separation where the scheme supports it; working capital by five methods | Implemented — [worked example](#4--results-carry-their-own-derivation) |
+| **Operating cost** | Direct and indirect operating cost with three published estimator families (Towler & Sinnott 2022; Peters, Timmerhaus & West 2003; Seider, Lewin & Lewis 2017) | Implemented — [worked example](#4--results-carry-their-own-derivation) |
 | **Profitability** | Discounted cash flow — NPV and IRR, MACRS depreciation, tax lag, working-capital recovery | Implemented |
-| **Heat integration — targeting** | Pinch analysis: problem-table cascade, composite and grand composite curves, LP transshipment targeting | Implemented — [worked example](#4--what-heat-integration-is-worth-here) |
-| **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented — [worked example](#4--what-heat-integration-is-worth-here) |
+| **Heat integration — targeting** | Pinch analysis: problem-table cascade, composite and grand composite curves, LP transshipment targeting | Implemented — [worked example](#5--what-heat-integration-is-worth-here) |
+| **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented — [worked example](#5--what-heat-integration-is-worth-here) |
 | **Utility selection** | Utility pool evaluation against the pinch; no-recovery baseline for comparison | Implemented |
 | **Equipment sizing** | Compressor (direct specification), heat exchanger (LMTD shortcut), pressure vessel (Souders–Brown) | Partial — 3 of 6 methods |
 | **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented |
@@ -138,7 +177,7 @@ Status reflects the code, not the specification. `Partial` names the gap.
 | **Units and currency** | pint-backed unit system, eight currencies, cost-index escalation (CEPCI as default index) | Implemented |
 | **Figures** | Five plot recipes with a notebook mode and a print mode; PNG / PDF / SVG export at fixed physical size | Implemented |
 | **Reporting** | Word report at guideline `shall` level | Partial — one profile |
-| **Process simulator link** | DWSIM flowsheet import — streams, unit operations, compounds | Partial — import only |
+| **Process simulator link** | DWSIM flowsheet import — streams, unit operations, compounds | Partial — import only; [worked example](#2--what-the-import-puts-into-the-case) |
 
 ---
 
@@ -177,15 +216,6 @@ validity is known.
 | Test suite | 324 test modules |
 | Runtime dependencies | pint, pandas, pydantic, python-docx, SciPy, SymPy, matplotlib |
 | Python | 3.11+ |
-
----
-
-## Publication
-
-Wunderlich, J., Kretzschmar, P. & Schomäcker, R. (2024). *Integrated
-techno-economic and life cycle assessment of hydroformylation in microemulsion
-systems.* Frontiers in Sustainability **5**, 1405471.
-[10.3389/frsus.2024.1405471](https://doi.org/10.3389/frsus.2024.1405471)
 
 ---
 

@@ -70,6 +70,12 @@ could contradict.
 
 ### 2 · What the import puts into the case
 
+This is the source. Three compression stages `C-1`, `C-2`, `C-3` with
+intercoolers `HX-C1` to `HX-C3` back to 308.15 K, knockout vessels `B-1` to
+`B-3` on the condensate, and the water-recovery exchanger `HX-H2`.
+
+![DWSIM flowsheet: three-stage CO₂ compression with intercooling](assets/dwsim_flowsheet.png)
+
 The flowsheet is read once. From that point the case carries the streams, the
 unit operations and the compound set as its own inventory — the assessment does
 not reach back into the simulator for them. The import states what it did and

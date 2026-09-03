@@ -1,11 +1,14 @@
 # tea — Techno-Economic Assessment for Process Concepts in the chemical industry
 
-**Modular package for comparative techno-economic assesment studies of process concepts in the chemical industry. Rapidly set up and branch cases from an isolated SSOT input layer. Specify CAPEX, OPEX and profitability estimators. Add grouped pinch- and hen design studies to cover heating and cooling requirements of hi-pooled plant streams. Use the command tea.update() to trigger the calculation pipeline in a stateless service layer, including the selection of the most cost-effective combination of specified heat integration scenarios. Inspect and compare detailed techno-economics in the results layer using show() and compare() methods to gain aggregate or detailed breakdown views of all calculated values and indicators. Added features: Use the intepretation layer to seamlessly import data into the case from external flowsheet simulators and orchestrate internal and external sensitivity sweeps. Persist and keep track of your cases through serialization in the .json format with automatic backup management. Customization: Register new hi solvers, or equipment sizing methods, or new bridges to external software. Modularity: Add additional layers according to your requirements. For instance, add an lca methododology layer or an exergetic or exergo-economic analysis layer to gain a holoistic comparative view on different process concepts across various assessment domains: All from a single set of ssot parameters through tea.update().**
+**One methodology, applied identically across many process concepts — so that the
+results are comparable, not merely available.**
 
-<!-- HERO FIGURE: insert the single most informative figure here, full width.
-     Suggested: HEN grid or the HEN economics comparison, since it shows both
-     the process-integration result and the cost consequence in one image.
-     Two sentences of caption underneath: what it shows, what is notable. -->
+![Heat exchanger network synthesised for the CO₂ pressurization case](assets/hen_grid.png)
+
+*A heat exchanger network synthesised by the package for the worked case below.
+Each match carries its area, duty and annualised cost; the network recovers
+1,613 kW of a 1,672.5 kW maximum-recovery target. The figure is generated from
+the case object — it is not drawn by hand.*
 
 ---
 
@@ -30,17 +33,104 @@ elements of the case object, and the report is generated at the guideline
 
 ---
 
+## A worked case
+
+CO₂ pressurization by three-stage compression with intercooling to 308 K. The
+flowsheet is solved in DWSIM and imported; everything downstream of the import
+is the package.
+
+| | |
+|---|---|
+| System boundary | Gate to gate, functional unit kt·a⁻¹, TRL 9 |
+| Cost basis | EUR, reference year 2026, CEPCI, plant type fluid, Germany |
+| Financial assumptions | Interest 20 %, tax 30 %, 1 a investment phase, 10 a production, linear on-ramp |
+| Operation | 90 % annual availability, ΔT_min 10 K |
+| Equipment | 4 compressors (three compression stages plus an auxiliary), 3 pressure vessels, heat exchangers from the synthesised network |
+| Utilities | Cooling water (20 → 25 °C), grid electricity (25 EUR·MWh⁻¹), LP, MP and HP steam |
+
+### 1 · Setup — assumptions are structure, not prose
+
+Every choice below is an attribute of the case object: typed, unit-carrying,
+persisted and reproducible. Nothing here is a comment that a later calculation
+could contradict.
+
+![Case setup: scope, cost context and financial assumptions](assets/example_setup.png)
+
+### 2 · One call runs the pipeline
+
+`validate()` checks the case for completeness before anything is computed.
+`update()` then runs equipment sizing, cost estimation, pinch targeting, network
+synthesis and the cash-flow model. Neither returns a bare number: `validate()`
+reports 0 errors against 16 warnings, `update()` a run report over 11 entries —
+and one result it declined to compute rather than compute wrongly.
+
+![validate() and update() with their result reports](assets/example_run.png)
+
+### 3 · Results carry their own derivation
+
+`breakdown=True` decomposes a number down to the line items and the applied
+factors, so an estimate can be traced back to its basis rather than taken on
+trust.
+
+![CAPEX result with full breakdown](assets/example_results_capex.png)
+
+Delivered equipment cost of 6.83 M EUR — dominated by the compressor train at
+6.23 M EUR — becomes 34.17 M EUR of total capital investment under the refined
+Lang factor of 5.00.
+
+![Operating cost with variable and fixed breakdown](assets/example_results_opex.png)
+
+### 4 · What heat integration is worth here
+
+Four syntheses are run against the same pinch scenario by MINLP with augmented
+penalty, varied over the exchanger minimum approach temperature and the
+admission of intermediate utilities.
+
+![HEN comparison across four synthesised realizations](assets/example_results_hen.png)
+
+Two numbers come out of this, and they answer different questions.
+
+**What integration is worth at all.** Three of the four syntheses produce a
+heat-recovering network at 1.56 to 1.92 M EUR·a⁻¹ total annualised cost. The
+third, at EMAT 5, recovers nothing and lands on 3.98 M EUR·a⁻¹ — which is
+exactly the un-integrated baseline the utility pool computes independently. The
+gap between the best network and that baseline is **2.42 M EUR·a⁻¹**.
+
+**What the choice of network is worth.** Among the three that do recover heat,
+0.36 M EUR·a⁻¹ separates best from worst — and the difference is structural, not
+marginal. Realizations 1 and 2 share the same approach temperature and recover
+the same duty to within 1 %; admitting intermediate utilities in realization 2
+cuts the exchanger area from 1,615 to 659 m² and the network capital cost from
+666 to 373 k EUR. That is the kind of thing a single synthesis run cannot tell
+you.
+
+![Total annualised cost, utility usage and capital cost across the four networks](assets/hen_compare.png)
+
+![Composite curves for the base pinch scenario](assets/composite_curves.png)
+
+### The full session
+
+**[`examples/co2_pressurization.ipynb`](examples/co2_pressurization.ipynb)** —
+case setup, flowsheet import, estimators, heat integration, results and figures,
+with the stored outputs. GitHub renders it directly.
+
+The notebook is evidence, not a tutorial: it is not executable outside its
+original environment, because the package is pre-release and not distributed
+here and the import step needs a local DWSIM file.
+
+---
+
 ## Capabilities
 
 Status reflects the code, not the specification. `Partial` names the gap.
 
 | Area | What it does | Status |
 |---|---|---|
-| **Capital cost** | Factored estimation with three published factor schemes (Lang refined 2003, Lang detailed 2003, Towler & Sinnott 2022); ISBL/OSBL separation where the scheme supports it; working capital by five methods | Implemented |
-| **Operating cost** | Direct and indirect operating cost with three published estimator families (Towler & Sinnott 2022; Peters, Timmerhaus & West 2003; Seider, Lewin & Lewis 2017) | Implemented |
+| **Capital cost** | Factored estimation with three published factor schemes (Lang refined 2003, Lang detailed 2003, Towler & Sinnott 2022); ISBL/OSBL separation where the scheme supports it; working capital by five methods | Implemented — [worked example](#3--results-carry-their-own-derivation) |
+| **Operating cost** | Direct and indirect operating cost with three published estimator families (Towler & Sinnott 2022; Peters, Timmerhaus & West 2003; Seider, Lewin & Lewis 2017) | Implemented — [worked example](#3--results-carry-their-own-derivation) |
 | **Profitability** | Discounted cash flow — NPV and IRR, MACRS depreciation, tax lag, working-capital recovery | Implemented |
-| **Heat integration — targeting** | Pinch analysis: problem-table cascade, composite and grand composite curves, LP transshipment targeting | Implemented |
-| **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented |
+| **Heat integration — targeting** | Pinch analysis: problem-table cascade, composite and grand composite curves, LP transshipment targeting | Implemented — [worked example](#4--what-heat-integration-is-worth-here) |
+| **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented — [worked example](#4--what-heat-integration-is-worth-here) |
 | **Utility selection** | Utility pool evaluation against the pinch; no-recovery baseline for comparison | Implemented |
 | **Equipment sizing** | Compressor (direct specification), heat exchanger (LMTD shortcut), pressure vessel (Souders–Brown) | Partial — 3 of 6 methods |
 | **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented |
@@ -70,34 +160,12 @@ validity is known.
 
 ---
 
-## Example
-
-<!-- REPLACE THIS BLOCK with a screenshot of a real notebook session:
-     one input cell, and underneath it the rendered show() table or figure.
-     A screenshot of the actual API is worth more than a code listing, because
-     it shows what using the package feels like. Keep it to one screen. -->
-
-```
-[ notebook screenshot: case setup → tea.update() → results table → figure ]
-```
-
----
-
 ## Methodology and architecture
 
 - [Methodology](docs/methodology.md) — assessment framework, cost basis,
   literature sources, what the numbers mean and what they do not.
 - [Architecture](docs/architecture.md) — layering, calculation pipeline,
   extension points.
-
----
-
-## Example case
-
-<!-- One worked case. Give it a name, a system boundary, a capacity, a base
-     year and a currency, then the headline result and one sensitivity.
-     Two figures and a link to the full report PDF. Without this section the
-     capability table above is a claim; with it, it is evidence. -->
 
 ---
 
@@ -114,8 +182,10 @@ validity is known.
 
 ## Publication
 
-<!-- Full citation of Wunderlich, Kretzschmar & Schomäcker (2024),
-     Frontiers in Sustainability — with DOI link. -->
+Wunderlich, J., Kretzschmar, P. & Schomäcker, R. (2024). *Integrated
+techno-economic and life cycle assessment of hydroformylation in microemulsion
+systems.* Frontiers in Sustainability **5**, 1405471.
+[10.3389/frsus.2024.1405471](https://doi.org/10.3389/frsus.2024.1405471)
 
 ---
 

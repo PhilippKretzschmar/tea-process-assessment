@@ -77,7 +77,7 @@ visible in the output.
 ## Profitability
 
 Discounted cash flow over the project life: **net present value and internal
-rate of return**, with MACRS depreciation, tax lag, and recovery of working
+rate of return**, with linear or MACRS depreciation, tax lag, and recovery of working
 capital and salvage at end of life. The internal rate of return is solved
 numerically rather than approximated.
 
@@ -102,15 +102,33 @@ against an independent formulation rather than trusted:
 
 | Synthesiser | Formulation | Source |
 |---|---|---|
-| MILP transshipment | Sequential — minimum utility, then minimum units | Papoulias & Grossmann |
-| MINLP stage-wise superstructure | Simultaneous — utility, area and unit trade-off | Yee & Grossmann (1990) |
-| MINLP augmented penalty / outer approximation | Simultaneous, AP/OA/ER decomposition | Viswanathan & Grossmann (1990) |
+| MILP transshipment | Sequential — match selection at targeted energy, minimum units at MER; area and cost per match afterwards | Papoulias & Grossmann |
+| MINLP stage-wise superstructure | Simultaneous — utility, area and unit trade-off, solved by outer approximation | Yee & Grossmann (1990), in the formulation of Ponce-Ortega et al. (2008); OA after Duran & Grossmann (1986) |
+| MINLP augmented penalty | The same superstructure, solved by combined penalty function with OA/ER decomposition | Viswanathan & Grossmann (1990) |
 
-The two MINLP implementations are paper-faithful: they solve the published test
-problems of their sources, and those solutions are held as regression anchors.
-This matters more than it may appear — a heat-exchanger-network synthesiser that
-has not been checked against published problems produces plausible networks that
-cannot be defended.
+**The two MINLP synthesisers do not return a proven optimum.** The stage-wise
+superstructure has a non-convex objective, so the solvers are deterministic
+heuristics with an incumbent guarantee: they return the best feasible network
+they found, and where a gap is reported at all it is informative rather than a
+proof — the augmented-penalty loop suppresses it as meaningless. The
+augmented-penalty variant in particular tends to a structurally leaner network
+than the published solutions of its source — a network in the same family, not
+the same network.
+
+That trade is deliberate and belongs to the estimate class. At concept stage the
+question is whether integration is worth roughly two million a year and which
+network family answers it, not which of two networks within one percent of each
+other is formally optimal. The synthesis runs in seconds, which is what makes it
+usable inside a parameter sweep at all. For a design decision downstream of
+screening, the result is a starting point for a rigorous synthesis, not a
+substitute for one.
+
+The published test problems of the MINLP sources are used as input anchors, and
+the verified solutions are frozen as regression fixpoints — one set deliberately
+held out — so a change in the solver that moves them is caught. This matters
+more than it may appear: a heat-exchanger-network synthesiser that has not been
+checked against published problems produces plausible networks that cannot be
+defended.
 
 **Utility selection** evaluates a pool of candidate utilities against the pinch,
 with a no-recovery baseline retained for comparison, so the value of integration
@@ -156,7 +174,13 @@ Probabilistic sampling (Monte Carlo) is specified but not implemented.
   Chemical Engineers*, 2003
 - Seider, W., Lewin, D. & Lewis, J. — *Product and Process Design Principles*,
   2017
+- Papoulias, S. & Grossmann, I. — A structural optimization approach in process
+  synthesis, Part II (heat recovery network transshipment model)
 - Yee, T. & Grossmann, I. — Simultaneous optimization models for heat
   integration, 1990
+- Ponce-Ortega, J., Jiménez-Gutiérrez, A. & Grossmann, I. — Optimal synthesis of
+  heat exchanger networks involving isothermal process streams, 2008
+- Duran, M. & Grossmann, I. — An outer-approximation algorithm for a class of
+  mixed-integer nonlinear programs, 1986
 - Viswanathan, J. & Grossmann, I. — A combined penalty function and outer
   approximation method for MINLP optimization, 1990

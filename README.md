@@ -133,7 +133,9 @@ configuration is a variable of the study, not a fixed input.
 All four scenarios are synthesised against **the same imported flowsheet
 solution** and the same pinch scenario. The process is held fixed here; what
 varies between them is the exchanger minimum approach temperature and whether
-intermediate utility levels may be used. The comparison therefore isolates the
+intermediate utility levels may be used. (The table below shows no pinch
+scenario for the third: it recovered nothing, so no network was realised against
+one.) The comparison therefore isolates the
 network decision from the process decision, which is a separate question and
 belongs to the sensitivity layer.
 
@@ -159,9 +161,13 @@ pick by looking at capital cost:
 | Utility cost | 1.43 M EUR·a⁻¹ | 1.47 M EUR·a⁻¹ |
 | **Total annualised cost** | **1.52 M EUR·a⁻¹** | 1.56 M EUR·a⁻¹ |
 
-<img src="assets/hen_grid_1.png" width="100%" alt="EMEAT-1: six units, 712 m² total, no intermediate utility level">
+**EMEAT-1** — six units, 712 m², 1.52 M EUR·a⁻¹
 
-<img src="assets/hen_grid.png" width="100%" alt="EMEAT-1-IU: six units, 659 m² total, intermediate utility levels admitted">
+<img src="assets/hen_grid_1.png" width="100%" alt="EMEAT-1 network grid: six matches, 712 m² total area">
+
+**EMEAT-1-IU** — six units, 659 m², 1.56 M EUR·a⁻¹
+
+<img src="assets/hen_grid.png" width="100%" alt="EMEAT-1-IU network grid: six matches, 659 m² total area">
 
 Same approach temperature, six units either way. The first network buys 53 m²
 more surface and 17 k EUR more capital to recover 39 kW more heat — and that
@@ -175,26 +181,48 @@ at the pinch scenario's ΔT_min, while the synthesiser works at its own EMAT, so
 the two are indicative of each other rather than strictly commensurable. The
 costing rests on the synthesised network's own mass and energy balances.
 
-**Reading the termination row.** `converged` and `max_iterations` are not pass
-and fail. The MINLP with augmented penalty adds an integer cut per evaluated
-topology and runs until the master problem is infeasible — at which point every
-feasible topology has been evaluated and the incumbent is optimal over the
-topology space, modulo local optima of the NLP subproblems. Three guards sit in
-front of that exhaustion: a wall-clock limit, a cap on major iterations, and a
-patience cap that stops the search when the incumbent has not improved over N
-consecutive feasible subproblems. Whichever way a run ends, the **best**
-incumbent is returned, not the last one.
+**Reading the termination row.** Neither `converged` nor `max_iterations` is a
+verdict on the network. The superstructure these synthesisers optimise has a
+non-convex objective, so they are deterministic heuristics with an incumbent
+guarantee: whatever ends the search — an exhausted topology space, an iteration
+budget, a patience cap on non-improving steps — the best feasible network found
+is returned, not the last one. The row names the stop condition; none of these
+runs carries a proof of optimality, and `max_iterations` is not a failure.
 
-The row reports only the first two guards by name. `max_iterations` on
-realization 2 therefore means its network is the best found inside the iteration
-budget rather than a failure to solve. And `converged` covers both true
-exhaustion and a patience stop, which the run report distinguishes but the
-termination row does not — so neither label should be read as a certificate of
-optimality without looking at the report behind it.
+That is the trade this estimate class accepts: seconds per synthesis instead of
+a certificate, which is also what makes synthesis affordable inside a parameter
+sweep. [Methodology](docs/methodology.md#heat-integration) states what it costs
+and where it stops being acceptable.
 
 ![Total annualised cost, utility usage and capital cost across the four networks](assets/hen_compare.png)
 
 ![Composite curves for the base pinch scenario](assets/composite_curves.png)
+
+### 6 · Varying the process itself
+
+Section 5 held the flowsheet fixed and varied the network. A sensitivity case
+does the opposite — and it does not have to choose a side. One sweep addresses
+both halves of the model at once: `flowsheet_parameterset` reaches through the
+bridge into the simulator and moves the process, `tea_parameterset` moves the
+economic assumptions, and both are traversed on the same grid.
+
+![Sensitivity case: sweep axes over flowsheet and TEA parameters](assets/example_sensitivity_setup.png)
+
+Two stage pressure ratios and the LP-steam price, five values each — 125 points.
+At every point the flowsheet is solved and re-imported, the equipment re-sized
+and re-costed, the pinch re-targeted and the network re-synthesised. Nothing is
+held over from the previous point.
+
+![Total annualised pool cost over the stage pressure ratios](assets/sensitivity_pool_tac.png)
+
+Each curve is one setting of the second stage, the x axis is the first. The
+dotted verticals mark where the selected heat-integration configuration changes
+— the pressure ratio at which a different network becomes the cheapest one. No
+single run shows that; it is the reason to sweep rather than to sample.
+
+> **Note.** This sweep was computed before the flowsheet revision behind the
+> results above, so its absolute values are superseded. It is shown for the
+> mechanism.
 
 ### The full session
 
@@ -221,12 +249,12 @@ Status reflects the code, not the specification. `Partial` names the gap.
 | **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented — [worked example](#5--what-heat-integration-scenarios-are-worth-here) |
 | **Utility selection** | Utility pool evaluation against the pinch; no-recovery baseline for comparison | Implemented |
 | **Equipment sizing** | Compressor (direct specification), heat exchanger (LMTD shortcut), pressure vessel (Souders–Brown and vessel geometry) | Partial — 4 of 6 methods |
-| **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented |
+| **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented; [worked example](#6--varying-the-process-itself) |
 | **Correlation library** | Editable cost-correlation library with correction factors and LaTeX rendering of the stored formula | Implemented |
 | **Units and currency** | pint-backed unit system, eight currencies, cost-index escalation (CEPCI as default index) | Implemented |
-| **Figures** | Six plot recipes with a notebook mode and a print mode; PNG / PDF / SVG export at fixed physical size | Implemented |
+| **Figures** | Six plot recipes with a notebook mode and a report mode; PNG / PDF / SVG export at fixed physical size | Implemented |
 | **Reporting** | Word report at guideline `shall` level | Partial — one profile |
-| **Process simulator link** | DWSIM flowsheet import — streams, unit operations, compounds | Partial — import only; [worked example](#2--what-the-import-puts-into-the-case) |
+| **Process simulator link** | DWSIM: flowsheet import — streams, unit operations, compounds — and parameter write-back with re-solve inside a sweep | Partial — write-back covers flowsheet parameters, not the full equipment set; DWSIM only. [Worked example](#2--what-the-import-puts-into-the-case) |
 
 ---
 
@@ -241,8 +269,10 @@ validity is known.
 - **No life-cycle assessment.** `tea` covers the techno-economic half only. The
   inventory layer — system boundary, mass and energy balances, utility demand —
   is the layer an LCA would build on, but that extension does not exist.
-- **Simulator coupling is import-only.** A flowsheet can be read; writing
-  parameters back and re-solving in a loop is specified but not implemented.
+- **Simulator coupling is partial.** A flowsheet can be read, and a sweep can
+  write flowsheet parameters back through the bridge and re-solve, as section 6
+  does. Write-back covers flowsheet parameters, not the full equipment set, and
+  DWSIM is the only backend.
 - **Solver.** MILP and LP run on HiGHS as bundled with SciPy; NLP subproblems on
   SciPy. No commercial solver licence is required.
 

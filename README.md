@@ -4,23 +4,21 @@
 results are comparable, not merely available.**
 
 > [!IMPORTANT]
-> ## PRELIMINARY SHOWCASE — UPLOAD OF FULL SHOWCASE PENDING
+> ## PRELIMINARY DEV SHOWCASE — VALID SHOWCASE PENDING
 >
-> This repository currently presents **one worked case**, published to make the
-> core workflow visible: case setup, flowsheet import, a single `update()` call,
-> and the results layer.
+> This repository presents **one development case**, published to make the core
+> workflow visible: case setup, flowsheet import, a single `update()` call, the
+> results layer and a parameter sweep.
 >
-> The full showcase is in preparation and will add further assessed cases, the
-> sensitivity analysis with its results, and the generated assessment report.
-> Until then, the capability table below states what the code does; the worked
-> case below it is the evidence for the part that is already shown.
+> It is a development case, not a validated assessment. The numbers below
+> demonstrate the machinery; they are not offered as a study result. A validated
+> showcase is in preparation and will add further assessed cases and the
+> generated assessment report.
 
 ![Heat exchanger network synthesised for the CO₂ pressurization case](assets/hen_grid.png)
 
 *A heat exchanger network synthesised by the package for the worked case below.
-Each match carries its area, duty and annualised cost; the network recovers
-1,613 kW of a 1,672.5 kW maximum-recovery target. The figure is generated from
-the case object — it is not drawn by hand.*
+Each match carries its area, duty and annualised cost.*
 
 ---
 
@@ -40,8 +38,8 @@ identically to every case built on it.
 
 The assessment framework follows the TEA Guidelines for CO₂ utilisation
 (Zimmermann et al.). Goal and scope are not documentation — they are structural
-elements of the case object, and the report is generated at the guideline
-`shall` level.
+elements of the case object, and required for a valid report according to the
+TEA guideline levels (`shall` / `should` / `may`).
 
 ---
 
@@ -72,7 +70,9 @@ could contradict.
 
 This is the source. Three compression stages `C-1`, `C-2`, `C-3` with
 intercoolers `HX-C1` to `HX-C3` back to 308.15 K, knockout vessels `B-1` to
-`B-3` on the condensate, and the water-recovery exchanger `HX-H2`.
+`B-3` on the condensate, the product heater `HX-H1` and the water-recovery
+exchanger `HX-H2`. The five streams these last exchangers define are the ones
+the heat integration in section 5 works on.
 
 ![DWSIM flowsheet: three-stage CO₂ compression with intercooling](assets/dwsim_flowsheet.png)
 
@@ -84,8 +84,8 @@ what it defaulted:
 ![Flowsheet import summary](assets/example_import.png)
 
 Seven equipment items, materials defaulted to SS316, and a warning that the
-compressors carry no power utility yet — wired up in the next cell. A default is
-recorded as a default, not applied silently.
+four compressors carry no power utility yet — three of them are wired up in the
+next cell. A default is recorded as a default, not applied silently.
 
 **Stream inventory, thermal section.** Every quantity the pinch analysis and the
 network synthesis use later is visible here: heat capacity, inlet and outlet
@@ -107,7 +107,9 @@ costs them.
 `update()` then runs equipment sizing, cost estimation, pinch targeting, network
 synthesis and the cash-flow model. Neither returns a bare number: `validate()`
 reports 0 errors against 16 warnings, `update()` a run report over 11 entries —
-and one result it declined to compute rather than compute wrongly.
+and one result it declined to compute rather than compute wrongly. Every error
+and every warning carries its context and the issue it names; the lists
+themselves are omitted here.
 
 ![validate() and update() with their result reports](assets/example_run.png)
 
@@ -121,15 +123,20 @@ trust.
 
 Delivered equipment cost of 6.83 M EUR — dominated by the compressor train at
 6.23 M EUR — becomes 34.17 M EUR of total capital investment under the refined
-Lang factor of 5.00.
+Lang factor of 5.00. This is the initial flowsheet configuration only; the
+configuration is a variable of the study, not a fixed input, and is varied in
+the sweep further down.
 
 ![Operating cost with variable and fixed breakdown](assets/example_results_opex.png)
 
-### 5 · What heat integration is worth here
+### 5 · What heat integration scenarios are worth here
 
-Four syntheses are run against the same pinch scenario by MINLP with augmented
-penalty, varied over the exchanger minimum approach temperature and the
-admission of intermediate utilities.
+All four scenarios are synthesised against **the same imported flowsheet
+solution** and the same pinch scenario. The process is held fixed here; what
+varies between them is the exchanger minimum approach temperature and whether
+intermediate utility levels may be used. The comparison therefore isolates the
+network decision from the process decision — the process itself is varied
+separately, in the sweep below.
 
 ![HEN comparison across four synthesised realizations](assets/example_results_hen.png)
 
@@ -143,15 +150,69 @@ gap between the best network and that baseline is **2.42 M EUR·a⁻¹**.
 
 **What the choice of network is worth.** Among the three that do recover heat,
 0.36 M EUR·a⁻¹ separates best from worst — and the difference is structural, not
-marginal. Realizations 1 and 2 share the same approach temperature and recover
-the same duty to within 1 %; admitting intermediate utilities in realization 2
-cuts the exchanger area from 1,615 to 659 m² and the network capital cost from
-666 to 373 k EUR. That is the kind of thing a single synthesis run cannot tell
-you.
+marginal:
+
+| | EMEAT-1 | EMEAT-1-IU |
+|---|---|---|
+| Total area | 1,615 m² | 659 m² |
+| Largest single exchanger | 1,092 m² | 173 m² |
+| Network capital cost | 666 k EUR | 373 k EUR |
+| Steam level used | LP **and MP** | LP only |
+| Total annualised cost | 1.92 M EUR·a⁻¹ | 1.56 M EUR·a⁻¹ |
+
+<img src="assets/hen_grid_1.png" width="100%" alt="EMEAT-1: one 1,092 m² exchanger and an MP-steam match">
+
+<img src="assets/hen_grid.png" width="100%" alt="EMEAT-1-IU: the same duty spread over smaller units on LP steam only">
+
+Same approach temperature, same duty to within 1 %. Admitting an intermediate
+utility level lets the second network spread the load over smaller exchangers
+and stay on LP steam, where the first has to place one very large unit and buy
+MP steam for the top of the range. Neither result is reachable by reasoning
+about a single synthesis run.
+
+*On the recovery fraction in the table:* the maximum-recovery target is computed
+at the pinch scenario's ΔT_min, while the synthesiser works at its own EMAT, so
+the two are indicative of each other rather than strictly commensurable. The
+costing rests on the synthesised network's own mass and energy balances.
+
+**Reading the termination row.** `converged` and `max_iterations` are not pass
+and fail. The MINLP with augmented penalty adds an integer cut per evaluated
+topology and runs until the master problem is infeasible — at which point every
+feasible topology has been evaluated and the incumbent is optimal over the
+topology space, modulo local optima of the NLP subproblems. Three guards sit in
+front of that exhaustion: a wall-clock limit, a cap on major iterations, and a
+patience cap that stops the search when the incumbent has not improved over N
+consecutive feasible subproblems. Whichever way a run ends, the **best**
+incumbent is returned, not the last one.
+
+The row reports only the first two guards by name. `max_iterations` on
+realization 2 therefore means its network is the best found inside the iteration
+budget rather than a failure to solve — and it is the cheapest of the four.
+`converged` covers both true exhaustion and a patience stop: realizations 1 and
+4 stopped on patience, after 32 and 39 iterations, which the run report records
+but the termination row does not distinguish.
 
 ![Total annualised cost, utility usage and capital cost across the four networks](assets/hen_compare.png)
 
 ![Composite curves for the base pinch scenario](assets/composite_curves.png)
+
+### 6 · Varying the process itself
+
+Section 5 held the flowsheet fixed and varied the network. A sensitivity case
+does the opposite: it varies the process and re-runs everything downstream of
+it. The sweep below spans the two stage pressure ratios and the LP-steam price
+over 125 points, and at every point it solves the flowsheet, re-imports it,
+re-sizes and re-costs the equipment, re-targets the pinch and re-synthesises the
+network.
+
+![Total annualised pool cost over the stage pressure ratios](assets/sensitivity_pool_tac.png)
+
+Each curve is one setting of the second stage; the x axis is the first. The
+dotted verticals mark where the selected heat-integration configuration changes
+— the point at which a different network becomes the cheapest one, which is
+exactly what a stage-by-stage hand calculation cannot see.
+
+![Total operating cost over the same sweep](assets/sensitivity_opex.png)
 
 ### The full session
 
@@ -174,14 +235,14 @@ Status reflects the code, not the specification. `Partial` names the gap.
 | **Capital cost** | Factored estimation with three published factor schemes (Lang refined 2003, Lang detailed 2003, Towler & Sinnott 2022); ISBL/OSBL separation where the scheme supports it; working capital by five methods | Implemented — [worked example](#4--results-carry-their-own-derivation) |
 | **Operating cost** | Direct and indirect operating cost with three published estimator families (Towler & Sinnott 2022; Peters, Timmerhaus & West 2003; Seider, Lewin & Lewis 2017) | Implemented — [worked example](#4--results-carry-their-own-derivation) |
 | **Profitability** | Discounted cash flow — NPV and IRR, MACRS depreciation, tax lag, working-capital recovery | Implemented |
-| **Heat integration — targeting** | Pinch analysis: problem-table cascade, composite and grand composite curves, LP transshipment targeting | Implemented — [worked example](#5--what-heat-integration-is-worth-here) |
-| **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented — [worked example](#5--what-heat-integration-is-worth-here) |
+| **Heat integration — targeting** | Pinch analysis: problem-table cascade, composite and grand composite curves, LP transshipment targeting | Implemented — [worked example](#5--what-heat-integration-scenarios-are-worth-here) |
+| **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented — [worked example](#5--what-heat-integration-scenarios-are-worth-here) |
 | **Utility selection** | Utility pool evaluation against the pinch; no-recovery baseline for comparison | Implemented |
-| **Equipment sizing** | Compressor (direct specification), heat exchanger (LMTD shortcut), pressure vessel (Souders–Brown) | Partial — 3 of 6 methods |
-| **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented |
+| **Equipment sizing** | Compressor (direct specification), heat exchanger (LMTD shortcut), pressure vessel (Souders–Brown and vessel geometry) | Partial — 4 of 6 methods |
+| **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented; [worked example](#6--varying-the-process-itself) |
 | **Correlation library** | Editable cost-correlation library with correction factors and LaTeX rendering of the stored formula | Implemented |
 | **Units and currency** | pint-backed unit system, eight currencies, cost-index escalation (CEPCI as default index) | Implemented |
-| **Figures** | Five plot recipes with a notebook mode and a print mode; PNG / PDF / SVG export at fixed physical size | Implemented |
+| **Figures** | Six plot recipes with a notebook mode and a print mode; PNG / PDF / SVG export at fixed physical size | Implemented |
 | **Reporting** | Word report at guideline `shall` level | Partial — one profile |
 | **Process simulator link** | DWSIM flowsheet import — streams, unit operations, compounds | Partial — import only; [worked example](#2--what-the-import-puts-into-the-case) |
 

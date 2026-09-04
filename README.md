@@ -15,7 +15,7 @@ results are comparable, not merely available.**
 > showcase is in preparation and will add further assessed cases and the
 > generated assessment report.
 
-![Heat exchanger network synthesised for the CO₂ pressurization case](assets/hen_grid.png)
+![Heat exchanger network synthesised for the CO₂ pressurization case](assets/hen_grid_1.png)
 
 *A heat exchanger network synthesised by the package for the worked case below.
 Each match carries its area, duty and annualised cost.*
@@ -55,7 +55,7 @@ is the package.
 | Cost basis | EUR, reference year 2026, CEPCI, plant type fluid, Germany |
 | Financial assumptions | Interest 20 %, tax 30 %, 1 a investment phase, 10 a production, linear on-ramp |
 | Operation | 90 % annual availability, ΔT_min 10 K |
-| Equipment | 4 compressors (three compression stages plus an auxiliary), 3 pressure vessels, heat exchangers from the synthesised network |
+| Equipment | 3 compressors, 3 pressure vessels, heat exchangers from the synthesised network |
 | Utilities | Cooling water (20 → 25 °C), grid electricity (25 EUR·MWh⁻¹), LP, MP and HP steam |
 
 ### 1 · Setup — assumptions are structure, not prose
@@ -71,7 +71,7 @@ could contradict.
 This is the source. Three compression stages `C-1`, `C-2`, `C-3` with
 intercoolers `HX-C1` to `HX-C3` back to 308.15 K, knockout vessels `B-1` to
 `B-3` on the condensate, the product heater `HX-H1` and the water-recovery
-exchanger `HX-H2`. The five streams these last exchangers define are the ones
+exchanger `HX-H2`. One thermal stream per exchanger — five in all — is what
 the heat integration in section 5 works on.
 
 ![DWSIM flowsheet: three-stage CO₂ compression with intercooling](assets/dwsim_flowsheet.png)
@@ -83,9 +83,9 @@ what it defaulted:
 
 ![Flowsheet import summary](assets/example_import.png)
 
-Seven equipment items, materials defaulted to SS316, and a warning that the
-four compressors carry no power utility yet — three of them are wired up in the
-next cell. A default is recorded as a default, not applied silently.
+Six equipment items, materials defaulted to SS316, and a warning that the
+three compressors carry no power utility yet — wired up in the next cell. A
+default is recorded as a default, not applied silently.
 
 **Stream inventory, thermal section.** Every quantity the pinch analysis and the
 network synthesis use later is visible here: heat capacity, inlet and outlet
@@ -106,7 +106,7 @@ costs them.
 `validate()` checks the case for completeness before anything is computed.
 `update()` then runs equipment sizing, cost estimation, pinch targeting, network
 synthesis and the cash-flow model. Neither returns a bare number: `validate()`
-reports 0 errors against 16 warnings, `update()` a run report over 11 entries —
+reports 0 errors against 14 warnings, `update()` a run report over 9 entries —
 and one result it declined to compute rather than compute wrongly. Every error
 and every warning carries its context and the issue it names; the lists
 themselves are omitted here.
@@ -121,11 +121,10 @@ trust.
 
 ![CAPEX result with full breakdown](assets/example_results_capex.png)
 
-Delivered equipment cost of 6.83 M EUR — dominated by the compressor train at
-6.23 M EUR — becomes 34.17 M EUR of total capital investment under the refined
-Lang factor of 5.00. This is the initial flowsheet configuration only; the
-configuration is a variable of the study, not a fixed input, and is varied in
-the sweep further down.
+Delivered equipment cost of 5.70 M EUR — dominated by the compressor train at
+5.08 M EUR — becomes 28.51 M EUR of total capital investment under the refined
+Lang factor of 5.00. This is the initial flowsheet configuration only: the
+configuration is a variable of the study, not a fixed input.
 
 ![Operating cost with variable and fixed breakdown](assets/example_results_opex.png)
 
@@ -135,40 +134,41 @@ All four scenarios are synthesised against **the same imported flowsheet
 solution** and the same pinch scenario. The process is held fixed here; what
 varies between them is the exchanger minimum approach temperature and whether
 intermediate utility levels may be used. The comparison therefore isolates the
-network decision from the process decision — the process itself is varied
-separately, in the sweep below.
+network decision from the process decision, which is a separate question and
+belongs to the sensitivity layer.
 
 ![HEN comparison across four synthesised realizations](assets/example_results_hen.png)
 
 Two numbers come out of this, and they answer different questions.
 
 **What integration is worth at all.** Three of the four syntheses produce a
-heat-recovering network at 1.56 to 1.92 M EUR·a⁻¹ total annualised cost. The
+heat-recovering network at 1.52 to 1.76 M EUR·a⁻¹ total annualised cost. The
 third, at EMAT 5, recovers nothing and lands on 3.98 M EUR·a⁻¹ — which is
 exactly the un-integrated baseline the utility pool computes independently. The
-gap between the best network and that baseline is **2.42 M EUR·a⁻¹**.
+gap between the best network and that baseline is **2.46 M EUR·a⁻¹**.
 
 **What the choice of network is worth.** Among the three that do recover heat,
-0.36 M EUR·a⁻¹ separates best from worst — and the difference is structural, not
-marginal:
+0.24 M EUR·a⁻¹ separates best from worst — and it is not the network you would
+pick by looking at capital cost:
 
 | | EMEAT-1 | EMEAT-1-IU |
 |---|---|---|
-| Total area | 1,615 m² | 659 m² |
-| Largest single exchanger | 1,092 m² | 173 m² |
-| Network capital cost | 666 k EUR | 373 k EUR |
-| Steam level used | LP **and MP** | LP only |
-| Total annualised cost | 1.92 M EUR·a⁻¹ | 1.56 M EUR·a⁻¹ |
+| Heat recovered | 1,652 kW | 1,613 kW |
+| Total area | 712 m² | 659 m² |
+| Network capital cost | 390 k EUR | 373 k EUR |
+| Utility cost | 1.43 M EUR·a⁻¹ | 1.47 M EUR·a⁻¹ |
+| **Total annualised cost** | **1.52 M EUR·a⁻¹** | 1.56 M EUR·a⁻¹ |
 
-<img src="assets/hen_grid_1.png" width="100%" alt="EMEAT-1: one 1,092 m² exchanger and an MP-steam match">
+<img src="assets/hen_grid_1.png" width="100%" alt="EMEAT-1: six units, 712 m² total, no intermediate utility level">
 
-<img src="assets/hen_grid.png" width="100%" alt="EMEAT-1-IU: the same duty spread over smaller units on LP steam only">
+<img src="assets/hen_grid.png" width="100%" alt="EMEAT-1-IU: six units, 659 m² total, intermediate utility levels admitted">
 
-Same approach temperature, same duty to within 1 %. Admitting an intermediate
-utility level lets the second network spread the load over smaller exchangers
-and stay on LP steam, where the first has to place one very large unit and buy
-MP steam for the top of the range. Neither result is reachable by reasoning
-about a single synthesis run.
+Same approach temperature, six units either way. The first network buys 53 m²
+more surface and 17 k EUR more capital to recover 39 kW more heat — and that
+trade pays for itself: the utility bill drops by more than the annualised
+capital rises, so the more expensive network is the cheaper one. Ranking these
+on installed cost, or on recovered duty alone, picks the wrong one. Only the
+total annualised cost orders them, and only a synthesis run produces it.
 
 *On the recovery fraction in the table:* the maximum-recovery target is computed
 at the pinch scenario's ΔT_min, while the synthesiser works at its own EMAT, so
@@ -187,32 +187,14 @@ incumbent is returned, not the last one.
 
 The row reports only the first two guards by name. `max_iterations` on
 realization 2 therefore means its network is the best found inside the iteration
-budget rather than a failure to solve — and it is the cheapest of the four.
-`converged` covers both true exhaustion and a patience stop: realizations 1 and
-4 stopped on patience, after 32 and 39 iterations, which the run report records
-but the termination row does not distinguish.
+budget rather than a failure to solve. And `converged` covers both true
+exhaustion and a patience stop, which the run report distinguishes but the
+termination row does not — so neither label should be read as a certificate of
+optimality without looking at the report behind it.
 
 ![Total annualised cost, utility usage and capital cost across the four networks](assets/hen_compare.png)
 
 ![Composite curves for the base pinch scenario](assets/composite_curves.png)
-
-### 6 · Varying the process itself
-
-Section 5 held the flowsheet fixed and varied the network. A sensitivity case
-does the opposite: it varies the process and re-runs everything downstream of
-it. The sweep below spans the two stage pressure ratios and the LP-steam price
-over 125 points, and at every point it solves the flowsheet, re-imports it,
-re-sizes and re-costs the equipment, re-targets the pinch and re-synthesises the
-network.
-
-![Total annualised pool cost over the stage pressure ratios](assets/sensitivity_pool_tac.png)
-
-Each curve is one setting of the second stage; the x axis is the first. The
-dotted verticals mark where the selected heat-integration configuration changes
-— the point at which a different network becomes the cheapest one, which is
-exactly what a stage-by-stage hand calculation cannot see.
-
-![Total operating cost over the same sweep](assets/sensitivity_opex.png)
 
 ### The full session
 
@@ -239,7 +221,7 @@ Status reflects the code, not the specification. `Partial` names the gap.
 | **Heat integration — synthesis** | Three network synthesisers: MILP transshipment; MINLP stage-wise superstructure (Yee & Grossmann); MINLP with augmented penalty / outer approximation (Viswanathan & Grossmann 1990) | Implemented — [worked example](#5--what-heat-integration-scenarios-are-worth-here) |
 | **Utility selection** | Utility pool evaluation against the pinch; no-recovery baseline for comparison | Implemented |
 | **Equipment sizing** | Compressor (direct specification), heat exchanger (LMTD shortcut), pressure vessel (Souders–Brown and vessel geometry) | Partial — 4 of 6 methods |
-| **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented; [worked example](#6--varying-the-process-itself) |
+| **Sensitivity analysis** | Multi-dimensional parameter sweeps over persisted scenarios, results retained for comparison | Partial — Monte Carlo not implemented |
 | **Correlation library** | Editable cost-correlation library with correction factors and LaTeX rendering of the stored formula | Implemented |
 | **Units and currency** | pint-backed unit system, eight currencies, cost-index escalation (CEPCI as default index) | Implemented |
 | **Figures** | Six plot recipes with a notebook mode and a print mode; PNG / PDF / SVG export at fixed physical size | Implemented |

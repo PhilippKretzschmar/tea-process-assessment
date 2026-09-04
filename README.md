@@ -36,8 +36,9 @@ correlations, the same index and currency base, and the same discounting
 assumptions. `tea` fixes those choices once, at case level, and applies them
 identically to every case built on it.
 
-The assessment framework follows the TEA Guidelines for CO₂ utilisation
-(Zimmermann et al.). Goal and scope are not documentation — they are structural
+The assessment framework follows the [TEA & LCA Guidelines for CO₂ Utilization,
+version 2.0](https://doi.org/10.7302/4190) (Langhorst et al., Global CO₂
+Initiative, 2022). Goal and scope are not documentation — they are structural
 elements of the case object, and required for a valid report according to the
 TEA guideline levels (`shall` / `should` / `may`).
 
@@ -75,6 +76,10 @@ exchanger `HX-H2`. One thermal stream per exchanger — five in all — is what
 the heat integration in section 5 works on.
 
 ![DWSIM flowsheet: three-stage CO₂ compression with intercooling](assets/dwsim_flowsheet.png)
+
+<sub>Flowsheet built and solved in [DWSIM](https://dwsim.org) 9.0.5 — open-source
+process simulation, © 2007–2025 Daniel Wagner and contributors, GPL v3. Screenshot
+of the case flowsheet.</sub>
 
 The flowsheet is read once. From that point the case carries the streams, the
 unit operations and the compound set as its own inventory — the assessment does
@@ -135,9 +140,8 @@ solution** and the same pinch scenario. The process is held fixed here; what
 varies between them is the exchanger minimum approach temperature and whether
 intermediate utility levels may be used. (The table below shows no pinch
 scenario for the third: it recovered nothing, so no network was realised against
-one.) The comparison therefore isolates the
-network decision from the process decision, which is a separate question and
-belongs to the sensitivity layer.
+one.) The comparison therefore isolates the network decision from the process
+decision, which is a separate question and belongs to the sensitivity layer.
 
 ![HEN comparison across four synthesised realizations](assets/example_results_hen.png)
 
@@ -306,6 +310,21 @@ distributing it.
 
 **Source access is available on request** — get in touch and I will add you as a
 reader on the private repository.
+
+---
+
+## Third-party software and data
+
+- **[DWSIM](https://dwsim.org)** 9.0.5 — open-source process simulation, modeling
+  and optimization. © 2007–2025 Daniel Wagner and contributors, GPL v3. The
+  worked case is built and solved in DWSIM and imported from it; `tea` reads the
+  flowsheet, it does not embed or redistribute any part of DWSIM.
+- **Cost index.** Escalation uses the CEPCI, published by *Chemical Engineering*
+  (Access Intelligence). The index series is licensed data and is **not**
+  reproduced in this repository — only the fact that it is the index in use.
+- **Exchange rates.** OECD/DAC rates via BMZ.
+- **Runtime dependencies.** pint, pandas, pydantic, python-docx, SciPy, SymPy,
+  matplotlib — all open source.
 
 ---
 

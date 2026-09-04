@@ -6,10 +6,11 @@ What the numbers mean, where they come from, and where they stop being valid.
 
 ## Assessment framework
 
-The package follows the **TEA Guidelines for CO₂ utilisation and Power-to-X**
-(Zimmermann et al.). The choice is not decorative: the guidelines exist because
-techno-economic results published under undeclared boundaries are not
-comparable, and comparability is the whole purpose here.
+The package follows the **TEA & LCA Guidelines for CO₂ Utilization, version
+2.0** (Langhorst et al., Global CO₂ Initiative, 2022). The choice is not
+decorative: the guidelines exist because techno-economic results published under
+undeclared boundaries are not comparable, and comparability is the whole purpose
+here.
 
 Two consequences are structural rather than editorial:
 
@@ -40,6 +41,12 @@ where equipment is identified and sized but not quoted. It is not a substitute
 for a vendor quote, and the package does not present it as one. Estimator
 families for earlier and later maturity are specified but not implemented.
 
+Equipment purchase cost itself comes from a correlation library rather than
+from the factoring scheme. The correlations used in the worked case are drawn
+from Turton et al. (2018), Seider et al. and Towler & Sinnott; each evaluation
+records which correlation, which base year and which currency produced it, and
+whether the size fell inside the correlation's validity range or was clamped.
+
 Working capital is available by five methods (fraction of fixed capital,
 fraction of total capital, months of operating cost, purchased-equipment
 fraction, fixed amount), because the choice materially moves the discounted cash
@@ -63,9 +70,11 @@ cost without manual reconciliation.
 
 Every cost carries a base year and a currency. Escalation to the reference year
 uses a cost index — **CEPCI** is the package default, as the established index
-for chemical plant capital cost. Currency conversion is a separate, explicit
-step. Both are audited: the result records which index value and which exchange
-rate produced it.
+for chemical plant capital cost. The CEPCI series is licensed data published by
+*Chemical Engineering* (Access Intelligence); this repository names the index it
+uses but does not reproduce its values. Currency conversion is a separate,
+explicit step. Both are audited: the result records which index value and which
+exchange rate produced it.
 
 This is the mechanism that makes literature-sourced cost data usable. Values
 taken from different publications in different years and currencies are
@@ -77,8 +86,8 @@ visible in the output.
 ## Profitability
 
 Discounted cash flow over the project life: **net present value and internal
-rate of return**, with linear or MACRS depreciation, tax lag, and recovery of working
-capital and salvage at end of life. The internal rate of return is solved
+rate of return**, with linear or MACRS depreciation, tax lag, and recovery of
+working capital and salvage at end of life. The internal rate of return is solved
 numerically rather than approximated.
 
 **Total annualised cost** is computed separately as a capital-charge-rate
@@ -167,13 +176,19 @@ Probabilistic sampling (Monte Carlo) is specified but not implemented.
 
 ## Sources
 
-- Zimmermann et al. — *Techno-Economic Assessment & Life Cycle Assessment
-  Guidelines for CO₂ Utilization*
+- Langhorst, T., McCord, S., Zimmermann, A., Müller, L., Cremonese, L.,
+  Strunge, T., Wang, Y., Zaragoza, A. V., Wunderlich, J., Marxen, A. et al. —
+  *Techno-Economic Assessment & Life Cycle Assessment Guidelines for CO₂
+  Utilization (Version 2.0)*, Global CO₂ Initiative, 2022.
+  [doi:10.7302/4190](https://doi.org/10.7302/4190)
 - Towler, G. & Sinnott, R. — *Chemical Engineering Design*, 2022
 - Peters, M., Timmerhaus, K. & West, R. — *Plant Design and Economics for
   Chemical Engineers*, 2003
 - Seider, W., Lewin, D. & Lewis, J. — *Product and Process Design Principles*,
   2017
+- Turton, R., Shaeiwitz, J. A., Bhattacharyya, D. & Whiting, W. B. — *Analysis,
+  Synthesis, and Design of Chemical Processes*, 5th edition, Pearson, 2018,
+  ISBN 978-0-13-417740-3
 - Papoulias, S. & Grossmann, I. — A structural optimization approach in process
   synthesis, Part II (heat recovery network transshipment model)
 - Yee, T. & Grossmann, I. — Simultaneous optimization models for heat

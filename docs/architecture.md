@@ -61,9 +61,9 @@ synthesiser or a figure means registering a class — not editing the caller.
 | CAPEX estimators | method × variant | 3 factored variants |
 | OPEX estimators | method × variant | 3 estimator families |
 | Profitability estimators | method | NPV/IRR |
-| Sizing methods | equipment type × method | 3 |
+| Sizing methods | equipment type × method | 4 |
 | HEN synthesisers | synthesiser id | 3 (MILP, MINLP-SWS, MINLP-AP) |
-| Plot recipes | plot kind | 5 |
+| Plot recipes | plot kind | 6 |
 
 The consequence that matters for an assessment framework: a methodological
 choice is a registry key stored in the case, so a study records which method
